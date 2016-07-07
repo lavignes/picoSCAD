@@ -88,6 +88,10 @@ PS_INLINE Ps4d ps_4d_normalize_fast(Ps4d v4d) {
     return ps_4d_mul(v4d, ps_4d_rsqrt_fast(ps_4d_dot(v4d, v4d)));
 }
 
+PS_INLINE Ps4d ps_4d_surfnorm(Ps4d p1, Ps4d p2, Ps4d p3) {
+    return ps_4d_cross(ps_4d_sub(p2, p1), ps_4d_sub(p3, p1));
+}
+
 PS_EXTERN_END
 
 #endif // PS_MATH_4D_H_

@@ -16,15 +16,13 @@ set(HEADERS
         include/picoscad/math/scalar/4d.h
         include/picoscad/math/simd/4d.h
 
-        include/picoscad/cg/vertex.h
-        include/picoscad/cg/mesh.h
+        include/picoscad/cg/ghclipping.h
         )
 
 set(SOURCES
         src/picoscad.c
 
-        src/cg/mesh.c
-        src/cg/vertex.c
+        src/cg/ghclipping.c
         )
 
 add_library(libpicoscad ${HEADERS} ${SOURCES})

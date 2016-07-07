@@ -20,6 +20,7 @@ PS_INLINE Ps4f ps_4f_dot3(Ps4f lhs, Ps4f rhs) {
                      ps_4f_splat_z(mul));
 }
 
+// TODO:
 PS_INLINE Ps4f ps_4f_dot(Ps4f lhs, Ps4f rhs) {
     const Ps4f mul = ps_4f_mul(lhs, rhs);
     return ps_4f_add(ps_4f_add(ps_4f_add(ps_4f_splat_x(mul),
@@ -86,6 +87,10 @@ PS_INLINE Ps4f ps_4f_normalize3_fast(Ps4f v4f) {
 
 PS_INLINE Ps4f ps_4f_normalize_fast(Ps4f v4f) {
     return ps_4f_mul(v4f, ps_4f_rsqrt_fast(ps_4f_dot(v4f, v4f)));
+}
+
+PS_INLINE Ps4f ps_4f_surfnorm(Ps4f p1, Ps4f p2, Ps4f p3) {
+    return ps_4f_cross(ps_4f_sub(p2, p1), ps_4f_sub(p3, p1));
 }
 
 PS_EXTERN_END

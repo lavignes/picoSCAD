@@ -9,7 +9,7 @@ static const char* vertex_shader_text =
                 "uniform mat4 proj;\n"
                 "attribute vec4 pos;\n"
                 "void main() {\n"
-                "mat4 mv = v * m;\n"
+                "    mat4 mv = v * m;\n"
                 "    gl_Position = proj * mv * pos;\n"
                 "}\n";
 static const char* fragment_shader_text =
@@ -18,21 +18,13 @@ static const char* fragment_shader_text =
                 "    gl_FragColor = color;\n"
                 "}\n";
 
-static Ps4f surface_normal(Ps4f p1, Ps4f p2, Ps4f p3) {
-    Ps4f v1 = ps_4f_sub(p2, p1);
-    Ps4f v2 = ps_4f_sub(p3, p1);
-    return ps_4f((ps_4f_y(v1) * ps_4f_z(v2)) - (ps_4f_z(v1) - ps_4f_y(v2)),
-                 -((ps_4f_z(v2) * ps_4f_x(v1)) - (ps_4f_x(v2) * ps_4f_z(v1))),
-                 (ps_4f_x(v1) * ps_4f_y(v2)) - (ps_4f_y(v1) * ps_4f_x(v2)), 1.0f);
-}
-
 int main(int argc, char **argv) {
 
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    GLFWwindow *window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(640, 480, "picoSCAD", NULL, NULL);
     glfwMakeContextCurrent(window);
 
     glewInit();
@@ -40,9 +32,10 @@ int main(int argc, char **argv) {
     glClearColor(0.95f, 0.95f, 0.90f, 1.0f);
     glLineWidth(2.0f);
 
-    Ps4f verticies[3] = {
+    Ps4f verticies[] = {
             ps_4f(-0.6f, -0.4f, 0.0f, 1.0f),
             ps_4f(0.6f, -0.4f, 0.0f, 1.0f),
+            ps_4f(-0.4f, 0.3f, 0.0f, 1.0f),
             ps_4f(0.0f, 0.6f, 0.0f, 1.0f),
     };
 
@@ -103,7 +96,7 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(v_location, 1, GL_FALSE, (const GLfloat *)&view);
         glUniformMatrix4fv(proj_location, 1, GL_FALSE, (const GLfloat *)&proj);
         glUniform4fv(color_location, 1, (const GLfloat *)&color);
-        glDrawArrays(GL_LINE_LOOP, 0, 3);
+        glDrawArrays(GL_LINE_LOOP, 0, 4);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

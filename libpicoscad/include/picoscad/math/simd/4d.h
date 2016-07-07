@@ -77,19 +77,19 @@ PS_INLINE Ps4d ps_4d_splat(double f) {
 }
 
 PS_INLINE Ps4d ps_4d_splat_x(Ps4d v4d) {
-    return ps_4d_swizzle(v4d, PS_4F_SWIZZLE_XXXX);
+    return ps_4d_swizzle(v4d, PS_SWIZZLE_XXXX);
 }
 
 PS_INLINE Ps4d ps_4d_splat_y(Ps4d v4d) {
-    return ps_4d_swizzle(v4d, PS_4F_SWIZZLE_YYYY);
+    return ps_4d_swizzle(v4d, PS_SWIZZLE_YYYY);
 }
 
 PS_INLINE Ps4d ps_4d_splat_z(Ps4d v4d) {
-    return ps_4d_swizzle(v4d, PS_4F_SWIZZLE_ZZZZ);
+    return ps_4d_swizzle(v4d, PS_SWIZZLE_ZZZZ);
 }
 
 PS_INLINE Ps4d ps_4d_splat_w(Ps4d v4d) {
-    return ps_4d_swizzle(v4d, PS_4F_SWIZZLE_WWWW);
+    return ps_4d_swizzle(v4d, PS_SWIZZLE_WWWW);
 }
 
 PS_INLINE Ps4d ps_4d_add(Ps4d lhs, Ps4d rhs) {
@@ -137,10 +137,10 @@ PS_INLINE Ps4d ps_4d_rsqrt_fast(Ps4d v4d) {
 }
 
 PS_INLINE Ps4d ps_4d_cross(Ps4d lhs, Ps4d rhs) {
-    return ps_4d_sub(ps_4d_mul(ps_4d_swizzle(lhs, PS_4F_SWIZZLE_WXZY),
-                               ps_4d_swizzle(rhs, PS_4F_SWIZZLE_WYXZ)),
-                     ps_4d_mul(ps_4d_swizzle(lhs, PS_4F_SWIZZLE_WYXZ),
-                               ps_4d_swizzle(rhs, PS_4F_SWIZZLE_WXZY)));
+    return ps_4d_sub(ps_4d_mul(ps_4d_swizzle(lhs, PS_SWIZZLE_WXZY),
+                               ps_4d_swizzle(rhs, PS_SWIZZLE_WYXZ)),
+                     ps_4d_mul(ps_4d_swizzle(lhs, PS_SWIZZLE_WYXZ),
+                               ps_4d_swizzle(rhs, PS_SWIZZLE_WXZY)));
 }
 
 PS_INLINE Ps4d ps_4d_min(Ps4d lhs, Ps4d rhs) {

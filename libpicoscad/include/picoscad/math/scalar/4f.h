@@ -7,8 +7,8 @@
 
 #define _PS_4F_SHUFFLE(x, y, z, w) (((x) << 6) | ((y) << 4) | ((z) << 2) | (w))
 
-typedef enum Ps4fSwizzle {
-    PS_4F_SWIZZLE_XXXX = _PS_4F_SHUFFLE(0, 0, 0, 0),
+typedef enum PsSwizzle {
+    PS_SWIZZLE_XXXX = _PS_4F_SHUFFLE(0, 0, 0, 0),
     PS_4F_SWIZZLE_XXXY = _PS_4F_SHUFFLE(0, 0, 0, 1),
     PS_4F_SWIZZLE_XXXZ = _PS_4F_SHUFFLE(0, 0, 0, 2),
     PS_4F_SWIZZLE_XXXW = _PS_4F_SHUFFLE(0, 0, 0, 3),
@@ -93,7 +93,7 @@ typedef enum Ps4fSwizzle {
     PS_4F_SWIZZLE_YYXZ = _PS_4F_SHUFFLE(1, 1, 0, 2),
     PS_4F_SWIZZLE_YYXW = _PS_4F_SHUFFLE(1, 1, 0, 3),
     PS_4F_SWIZZLE_YYYX = _PS_4F_SHUFFLE(1, 1, 1, 0),
-    PS_4F_SWIZZLE_YYYY = _PS_4F_SHUFFLE(1, 1, 1, 1),
+    PS_SWIZZLE_YYYY = _PS_4F_SHUFFLE(1, 1, 1, 1),
     PS_4F_SWIZZLE_YYYZ = _PS_4F_SHUFFLE(1, 1, 1, 2),
     PS_4F_SWIZZLE_YYYW = _PS_4F_SHUFFLE(1, 1, 1, 3),
     PS_4F_SWIZZLE_YYZX = _PS_4F_SHUFFLE(1, 1, 2, 0),
@@ -178,7 +178,7 @@ typedef enum Ps4fSwizzle {
     PS_4F_SWIZZLE_ZZYW = _PS_4F_SHUFFLE(2, 2, 1, 3),
     PS_4F_SWIZZLE_ZZZX = _PS_4F_SHUFFLE(2, 2, 2, 0),
     PS_4F_SWIZZLE_ZZZY = _PS_4F_SHUFFLE(2, 2, 2, 1),
-    PS_4F_SWIZZLE_ZZZZ = _PS_4F_SHUFFLE(2, 2, 2, 2),
+    PS_SWIZZLE_ZZZZ = _PS_4F_SHUFFLE(2, 2, 2, 2),
     PS_4F_SWIZZLE_ZZZW = _PS_4F_SHUFFLE(2, 2, 2, 3),
     PS_4F_SWIZZLE_ZZWX = _PS_4F_SHUFFLE(2, 2, 3, 0),
     PS_4F_SWIZZLE_ZZWY = _PS_4F_SHUFFLE(2, 2, 3, 1),
@@ -209,7 +209,7 @@ typedef enum Ps4fSwizzle {
     PS_4F_SWIZZLE_WXYZ = _PS_4F_SHUFFLE(3, 0, 1, 2),
     PS_4F_SWIZZLE_WXYW = _PS_4F_SHUFFLE(3, 0, 1, 3),
     PS_4F_SWIZZLE_WXZX = _PS_4F_SHUFFLE(3, 0, 2, 0),
-    PS_4F_SWIZZLE_WXZY = _PS_4F_SHUFFLE(3, 0, 2, 1),
+    PS_SWIZZLE_WXZY = _PS_4F_SHUFFLE(3, 0, 2, 1),
     PS_4F_SWIZZLE_WXZZ = _PS_4F_SHUFFLE(3, 0, 2, 2),
     PS_4F_SWIZZLE_WXZW = _PS_4F_SHUFFLE(3, 0, 2, 3),
     PS_4F_SWIZZLE_WXWX = _PS_4F_SHUFFLE(3, 0, 3, 0),
@@ -218,7 +218,7 @@ typedef enum Ps4fSwizzle {
     PS_4F_SWIZZLE_WXWW = _PS_4F_SHUFFLE(3, 0, 3, 3),
     PS_4F_SWIZZLE_WYXX = _PS_4F_SHUFFLE(3, 1, 0, 0),
     PS_4F_SWIZZLE_WYXY = _PS_4F_SHUFFLE(3, 1, 0, 1),
-    PS_4F_SWIZZLE_WYXZ = _PS_4F_SHUFFLE(3, 1, 0, 2),
+    PS_SWIZZLE_WYXZ = _PS_4F_SHUFFLE(3, 1, 0, 2),
     PS_4F_SWIZZLE_WYXW = _PS_4F_SHUFFLE(3, 1, 0, 3),
     PS_4F_SWIZZLE_WYYX = _PS_4F_SHUFFLE(3, 1, 1, 0),
     PS_4F_SWIZZLE_WYYY = _PS_4F_SHUFFLE(3, 1, 1, 1),
@@ -263,8 +263,8 @@ typedef enum Ps4fSwizzle {
     PS_4F_SWIZZLE_WWWX = _PS_4F_SHUFFLE(3, 3, 3, 0),
     PS_4F_SWIZZLE_WWWY = _PS_4F_SHUFFLE(3, 3, 3, 1),
     PS_4F_SWIZZLE_WWWZ = _PS_4F_SHUFFLE(3, 3, 3, 2),
-    PS_4F_SWIZZLE_WWWW = _PS_4F_SHUFFLE(3, 3, 3, 3),
-} Ps4fSwizzle;
+    PS_SWIZZLE_WWWW = _PS_4F_SHUFFLE(3, 3, 3, 3),
+} PsSwizzle;
 
 #undef _PS_4F_SHUFFLE
 
@@ -325,7 +325,7 @@ PS_INLINE float ps_4f_w(Ps4f v4f) {
     return v4f._w;
 }
 
-PS_INLINE Ps4f ps_4f_swizzle(Ps4f v4f, Ps4fSwizzle swizzle) {
+PS_INLINE Ps4f ps_4f_swizzle(Ps4f v4f, PsSwizzle swizzle) {
     return ps_4f(v4f._arr[(swizzle & 0xC0) >> 6],
                  v4f._arr[(swizzle & 0x30) >> 4],
                  v4f._arr[(swizzle & 0x0C) >> 2],
