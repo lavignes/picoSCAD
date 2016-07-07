@@ -1,5 +1,11 @@
 #include <picoscad/cg/ghclipping.h>
 
+typedef enum Operation {
+    UNION,
+    DIFF,
+    ISECT
+} Operation;
+
 typedef struct GHVertex GHVertex;
 
 struct PsGHPolygon {
@@ -14,11 +20,10 @@ struct GHVertex {
     GHVertex *neighbor;
     bool entry;
     float alpha;
-    bool intersect;
     bool checked;
 };
 
-static GHVertex *ghvertex_new(Ps4f v4f, float alpha, bool intersect, bool entry) {
+static GHVertex *ghvertex_new(Ps4f v4f, float alpha, bool entry) {
     GHVertex *vertex = malloc(sizeof(GHVertex));
     vertex->v4f = v4f;
     vertex->next = NULL;
@@ -26,7 +31,6 @@ static GHVertex *ghvertex_new(Ps4f v4f, float alpha, bool intersect, bool entry)
     vertex->neighbor = NULL;
     vertex->entry = entry;
     vertex->alpha = alpha;
-    vertex->intersect = intersect;
     vertex->checked = false;
     return vertex;
 }
@@ -91,26 +95,45 @@ static bool intersection(Ps4f p1, Ps4f p2, Ps4f p3, Ps4f p4, Ps4f *point, float 
     return false;
 }
 
-PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, bool entry, bool clip_entry) {
+PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, Operation operation) {
+    bool entry, clip_entry;
+    switch (operation) {
+        case UNION:
+            entry = false;
+            clip_entry = false;
+            break;
+        case DIFF:
+            entry = false;
+            clip_entry = true;
+            break;
+        case ISECT:
+        default:
+            entry = true;
+            clip_entry = true;
+            break;
+    }
     // Phase-1 (find intersections)
+    size_t intersect_count = 0;
+    bool poly_in_clip = false;
     GHVertex *current = poly->head;
     do {
-        if (!current->intersect) {
+        if (!current->neighbor) {
             GHVertex *clip_current = clip->head;
             do {
-                if (!clip_current->intersect) {
+                if (!clip_current->neighbor) {
                     Ps4f point;
                     float alpha, alpha_clip;
                     // Check for intersection
                     if (intersection(current->v4f, current->next->v4f, clip_current->v4f, clip_current->next->v4f,
                                      &point, &alpha, &alpha_clip)) {
                         // Create new points in each polygon representing the intersecting points
-                        GHVertex *neighbor = ghvertex_new(point, alpha, true, false);
-                        GHVertex *clip_neighbor = ghvertex_new(point, alpha_clip, true, false);
+                        GHVertex *neighbor = ghvertex_new(point, alpha, false);
+                        GHVertex *clip_neighbor = ghvertex_new(point, alpha_clip, false);
                         neighbor->neighbor = clip_neighbor;
                         clip_neighbor->neighbor = neighbor;
                         ghpolygon_insert(poly, neighbor, current, current->next);
                         ghpolygon_insert(clip, clip_neighbor, clip_current, clip_current->next);
+                        intersect_count++;
                     }
                 }
                 clip_current = clip_current->next;
@@ -121,9 +144,10 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
 
     // Phase-2 (entry-exit checking)
     current = poly->head;
-    entry ^= ghpolygon_vertex_inside(clip, current);
+    poly_in_clip = ghpolygon_vertex_inside(clip, current);
+    entry ^= poly_in_clip;
     do {
-        if (current->intersect) {
+        if (current->neighbor) {
             current->entry = entry;
             entry = !entry;
         }
@@ -132,7 +156,7 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
     GHVertex *clip_current = clip->head;
     clip_entry ^= ghpolygon_vertex_inside(poly, clip_current);
     do {
-        if (clip_current->intersect) {
+        if (clip_current->neighbor) {
             clip_current->entry = clip_entry;
             clip_entry = !clip_entry;
         }
@@ -141,12 +165,11 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
 
     // Phase-3 (clip that shit)
     PsArray OF(PsGHPolygon *) *array = ps_array_new(1);
-    size_t unchecked_count = poly->size;
     GHVertex *intersect = poly->head;
-    while (unchecked_count > 0) {
+    while (intersect_count > 0) {
         // Find next intersecting point
         do {
-            if (intersect->intersect && !intersect->checked) {
+            if (intersect->neighbor && !intersect->checked) {
                 break;
             }
             intersect = intersect->next;
@@ -157,12 +180,15 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
         ps_ghpolygon_add(clipped, current->v4f);
         while (true) {
             current->checked = true;
-            unchecked_count--;
+            if (current->neighbor) {
+                current->neighbor->checked = true;
+            }
+            intersect_count--;
             if (current->entry) {
                 while (true) {
                     current = current->next;
                     ps_ghpolygon_add(clipped, current->v4f);
-                    if (current->intersect) {
+                    if (current->neighbor) {
                         break;
                     }
                 }
@@ -170,7 +196,7 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
                 while (true) {
                     current = current->prev;
                     ps_ghpolygon_add(clipped, current->v4f);
-                    if (current->intersect) {
+                    if (current->neighbor) {
                         break;
                     }
                 }
@@ -183,8 +209,28 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
         ps_array_add(array, clipped);
     }
 
+    // No intersection, gotta do weird stuff
     if (ps_array_get_length(array) == 0) {
-        ps_array_add(array, poly);
+        switch (operation) {
+            case UNION:
+                ps_array_add(array, poly);
+                break;
+            case DIFF:
+                if (poly_in_clip) {
+                    // No result
+                } else {
+                    // Create new polygon with hole???
+                    // TODO: Gotta add multiple "contours" to a polygon and then tessellate
+                }
+                break;
+            case ISECT:
+                if (poly_in_clip) {
+                    ps_array_add(array, poly);
+                } else {
+                    ps_array_add(array, clip);
+                }
+                break;
+        }
     }
     return array;
 }
@@ -198,7 +244,7 @@ PsGHPolygon *ps_ghpolygon_new() {
 
 PsGHPolygon *ps_ghpolygon_new_with_points(Ps4f *points, size_t length) {
     PsGHPolygon *poly = ps_ghpolygon_new();
-    for (size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         ps_ghpolygon_add(poly, points[i]);
     }
     return poly;
@@ -219,7 +265,7 @@ size_t ps_ghpolygon_get_size(PsGHPolygon *poly) {
 }
 
 void ps_ghpolygon_add(PsGHPolygon *poly, Ps4f point) {
-    GHVertex *vertex = ghvertex_new(point, 0.0f, false, true);
+    GHVertex *vertex = ghvertex_new(point, 0.0f, true);
     if (!poly->head) {
         poly->head = vertex;
         poly->head->next = vertex;
@@ -247,13 +293,13 @@ bool ps_ghpolygon_foreach(PsGHPolygon *poly, bool (*foreach)(Ps4f *point, void *
 }
 
 PsArray OF(PsGHPolygon *) *ps_ghpolygon_union(PsGHPolygon *poly, PsGHPolygon *target) {
-    return ghpolygon_clip(poly, target, false, false);
+    return ghpolygon_clip(poly, target, UNION);
 }
 
 PsArray OF(PsGHPolygon *) *ps_ghpolygon_diff(PsGHPolygon *poly, PsGHPolygon *target) {
-    return ghpolygon_clip(poly, target, false, true);
+    return ghpolygon_clip(poly, target, DIFF);
 }
 
 PsArray OF(PsGHPolygon *) *ps_ghpolygon_intersect(PsGHPolygon *poly, PsGHPolygon *target) {
-    return ghpolygon_clip(poly, target, true, true);
+    return ghpolygon_clip(poly, target, ISECT);
 }
