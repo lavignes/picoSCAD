@@ -21,15 +21,21 @@ static const char* fragment_shader_text =
                 "    gl_FragColor = color;\n"
                 "}\n";
 
+
 static bool foreach(Ps4f *point, void *userdata) {
     printf("(%g %g)\n", ps_4f_x(*point), ps_4f_y(*point));
     return false;
 }
 
-static bool foreach_poly(PsGHPolygon *poly, size_t index, void *userdata) {
+static bool print_poly(PsGHPolygon *poly, size_t index, void *userdata) {
     printf("polygon #%zu\n", index);
     ps_ghpolygon_foreach(poly, foreach, NULL);
     printf("\n");
+    return false;
+}
+
+static bool free_poly(PsGHPolygon *poly, size_t index, void *userdata) {
+    ps_ghpolygon_free(poly);
     return false;
 }
 
@@ -87,11 +93,12 @@ int main(int argc, char **argv) {
     PsGHPolygon *poly = ps_ghpolygon_new_with_points(verticies, 3);
     PsGHPolygon *poly2 = ps_ghpolygon_new_with_points(poly2verts, 3);
 
-    PsArray OF(PsGHPolygon *) *array = ps_ghpolygon_intersect(poly, poly2);
-    ps_array_foreach(array, (void *)foreach_poly, NULL);
-
+    PsArray OF(PsGHPolygon *) *array = ps_ghpolygon_union(poly, poly2);
     ps_ghpolygon_free(poly);
     ps_ghpolygon_free(poly2);
+
+    ps_array_foreach(array, (void *)print_poly, NULL);
+    ps_array_foreach(array, (void *)free_poly, NULL);
 
     Ps4f color = ps_4f(0.0f, 0.0f, 0.0f, 1.0f);
     Ps4f cam_pos = ps_4f_zero();

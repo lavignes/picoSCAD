@@ -95,7 +95,17 @@ static bool intersection(Ps4f p1, Ps4f p2, Ps4f p3, Ps4f p4, Ps4f *point, float 
     return false;
 }
 
-PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, Operation operation) {
+static PsGHPolygon *ghpolygon_dup(PsGHPolygon *poly) {
+    PsGHPolygon *new_poly = ps_ghpolygon_new();
+    GHVertex *current = poly->head;
+    do {
+        ps_ghpolygon_add(new_poly, current->v4f);
+        current = current->next;
+    } while (current != poly->head);
+    return new_poly;
+}
+
+static PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, Operation operation) {
     bool entry, clip_entry;
     switch (operation) {
         case UNION:
@@ -213,7 +223,7 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
     if (ps_array_get_length(array) == 0) {
         switch (operation) {
             case UNION:
-                ps_array_add(array, poly);
+                ps_array_add(array, ghpolygon_dup(poly));
                 break;
             case DIFF:
                 if (poly_in_clip) {
@@ -225,9 +235,9 @@ PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, 
                 break;
             case ISECT:
                 if (poly_in_clip) {
-                    ps_array_add(array, poly);
+                    ps_array_add(array, ghpolygon_dup(poly));
                 } else {
-                    ps_array_add(array, clip);
+                    ps_array_add(array, ghpolygon_dup(clip));
                 }
                 break;
         }
