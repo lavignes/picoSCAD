@@ -1,6 +1,9 @@
+#include <stdio.h>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <picoscad/cg/ghclipping.h>
 #include <picoscad/math/mat4f.h>
 
 static const char* vertex_shader_text =
@@ -18,6 +21,18 @@ static const char* fragment_shader_text =
                 "    gl_FragColor = color;\n"
                 "}\n";
 
+static bool foreach(Ps4f *point, void *userdata) {
+    printf("(%g %g)\n", ps_4f_x(*point), ps_4f_y(*point));
+    return false;
+}
+
+static bool foreach_poly(PsGHPolygon *poly, size_t index, void *userdata) {
+    printf("polygon #%zu\n", index);
+    ps_ghpolygon_foreach(poly, foreach, NULL);
+    printf("\n");
+    return false;
+}
+
 int main(int argc, char **argv) {
 
     glfwInit();
@@ -32,11 +47,16 @@ int main(int argc, char **argv) {
     glClearColor(0.95f, 0.95f, 0.90f, 1.0f);
     glLineWidth(2.0f);
 
-    Ps4f verticies[] = {
+    Ps4f verticies[3] = {
             ps_4f(-0.6f, -0.4f, 0.0f, 1.0f),
             ps_4f(0.6f, -0.4f, 0.0f, 1.0f),
-            ps_4f(-0.4f, 0.3f, 0.0f, 1.0f),
             ps_4f(0.0f, 0.6f, 0.0f, 1.0f),
+    };
+
+    Ps4f poly2verts[3] = {
+            ps_4f(-0.3f, -0.2f, 0.0f, 1.0f),
+            ps_4f(0.3f, -0.2f, 0.0f, 1.0f),
+            ps_4f(0.0f, 0.3f, 0.0f, 1.0f),
     };
 
     GLuint vertex_buffer, vertex_shader, fragment_shader, program;
@@ -63,6 +83,15 @@ int main(int argc, char **argv) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
     glEnableVertexAttribArray((GLuint)pos_location);
     glVertexAttribPointer((GLuint)pos_location, 4, GL_FLOAT, GL_FALSE, sizeof(Ps4f), NULL);
+
+    PsGHPolygon *poly = ps_ghpolygon_new_with_points(verticies, 3);
+    PsGHPolygon *poly2 = ps_ghpolygon_new_with_points(poly2verts, 3);
+
+    PsArray OF(PsGHPolygon *) *array = ps_ghpolygon_intersect(poly, poly2);
+    ps_array_foreach(array, (void *)foreach_poly, NULL);
+
+    ps_ghpolygon_free(poly);
+    ps_ghpolygon_free(poly2);
 
     Ps4f color = ps_4f(0.0f, 0.0f, 0.0f, 1.0f);
     Ps4f cam_pos = ps_4f_zero();
@@ -96,7 +125,7 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(v_location, 1, GL_FALSE, (const GLfloat *)&view);
         glUniformMatrix4fv(proj_location, 1, GL_FALSE, (const GLfloat *)&proj);
         glUniform4fv(color_location, 1, (const GLfloat *)&color);
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
+        glDrawArrays(GL_LINE_LOOP, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -91,56 +91,7 @@ static bool intersection(Ps4f p1, Ps4f p2, Ps4f p3, Ps4f p4, Ps4f *point, float 
     return false;
 }
 
-PsGHPolygon *ps_ghpolygon_new() {
-    PsGHPolygon *poly = malloc(sizeof(PsGHPolygon));
-    poly->head = NULL;
-    poly->size = 0;
-    return poly;
-}
-
-void ps_ghpolygon_free(PsGHPolygon *poly) {
-    GHVertex *current = poly->head;
-    do {
-        GHVertex *next = current->next;
-        ghvertex_free(current);
-        current = next;
-    } while (current != poly->head);
-    free(poly);
-}
-
-size_t ps_ghpolygon_get_size(PsGHPolygon *poly) {
-    return poly->size;
-}
-
-void ps_ghpolygon_add(PsGHPolygon *poly, Ps4f point) {
-    GHVertex *vertex = ghvertex_new(point, 0.0f, false, true);
-    if (!poly->head) {
-        poly->head = vertex;
-        poly->head->next = vertex;
-        poly->head->prev = vertex;
-    } else {
-        GHVertex *next = poly->head;
-        GHVertex *prev = next->prev;
-        next->prev = vertex;
-        vertex->next = next;
-        vertex->prev = prev;
-        prev->next = vertex;
-    }
-    poly->size++;
-}
-
-bool ps_ghpolygon_foreach(PsGHPolygon *poly, bool (*foreach)(Ps4f *point, void *userdata), void *userdata) {
-    GHVertex *current = poly->head;
-    do {
-        if (foreach(&current->v4f, userdata)) {
-            return true;
-        }
-        current = current->next;
-    } while (current != poly->head);
-    return false;
-}
-
-PsArray OF(PsGHPolygon *) *ps_ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, bool entry, bool clip_entry) {
+PsArray OF(PsGHPolygon *) *ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, bool entry, bool clip_entry) {
     // Phase-1 (find intersections)
     GHVertex *current = poly->head;
     do {
@@ -231,9 +182,78 @@ PsArray OF(PsGHPolygon *) *ps_ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *cli
         }
         ps_array_add(array, clipped);
     }
-    
+
     if (ps_array_get_length(array) == 0) {
         ps_array_add(array, poly);
     }
     return array;
+}
+
+PsGHPolygon *ps_ghpolygon_new() {
+    PsGHPolygon *poly = malloc(sizeof(PsGHPolygon));
+    poly->head = NULL;
+    poly->size = 0;
+    return poly;
+}
+
+PsGHPolygon *ps_ghpolygon_new_with_points(Ps4f *points, size_t length) {
+    PsGHPolygon *poly = ps_ghpolygon_new();
+    for (size_t i = 0; i < 4; ++i) {
+        ps_ghpolygon_add(poly, points[i]);
+    }
+    return poly;
+}
+
+void ps_ghpolygon_free(PsGHPolygon *poly) {
+    GHVertex *current = poly->head;
+    do {
+        GHVertex *next = current->next;
+        ghvertex_free(current);
+        current = next;
+    } while (current != poly->head);
+    free(poly);
+}
+
+size_t ps_ghpolygon_get_size(PsGHPolygon *poly) {
+    return poly->size;
+}
+
+void ps_ghpolygon_add(PsGHPolygon *poly, Ps4f point) {
+    GHVertex *vertex = ghvertex_new(point, 0.0f, false, true);
+    if (!poly->head) {
+        poly->head = vertex;
+        poly->head->next = vertex;
+        poly->head->prev = vertex;
+    } else {
+        GHVertex *next = poly->head;
+        GHVertex *prev = next->prev;
+        next->prev = vertex;
+        vertex->next = next;
+        vertex->prev = prev;
+        prev->next = vertex;
+    }
+    poly->size++;
+}
+
+bool ps_ghpolygon_foreach(PsGHPolygon *poly, bool (*foreach)(Ps4f *point, void *userdata), void *userdata) {
+    GHVertex *current = poly->head;
+    do {
+        if (foreach(&current->v4f, userdata)) {
+            return true;
+        }
+        current = current->next;
+    } while (current != poly->head);
+    return false;
+}
+
+PsArray OF(PsGHPolygon *) *ps_ghpolygon_union(PsGHPolygon *poly, PsGHPolygon *target) {
+    return ghpolygon_clip(poly, target, false, false);
+}
+
+PsArray OF(PsGHPolygon *) *ps_ghpolygon_diff(PsGHPolygon *poly, PsGHPolygon *target) {
+    return ghpolygon_clip(poly, target, false, true);
+}
+
+PsArray OF(PsGHPolygon *) *ps_ghpolygon_intersect(PsGHPolygon *poly, PsGHPolygon *target) {
+    return ghpolygon_clip(poly, target, true, true);
 }
