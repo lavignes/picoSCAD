@@ -140,7 +140,7 @@ bool ps_ghpolygon_foreach(PsGHPolygon *poly, bool (*foreach)(Ps4f *point, void *
     return false;
 }
 
-PsGHPolygon *ps_ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, bool entry, bool clip_entry) {
+PsArray OF(PsGHPolygon *) *ps_ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, bool entry, bool clip_entry) {
     // Phase-1 (find intersections)
     GHVertex *current = poly->head;
     do {
@@ -188,7 +188,52 @@ PsGHPolygon *ps_ghpolygon_clip(PsGHPolygon *poly, PsGHPolygon *clip, bool entry,
         clip_current = clip_current->next;
     } while (clip_current != clip->head);
 
-    // Phase-3 (clip
-
-    return ps_ghpolygon_new();
+    // Phase-3 (clip that shit)
+    PsArray OF(PsGHPolygon *) *array = ps_array_new(1);
+    size_t unchecked_count = poly->size;
+    GHVertex *intersect = poly->head;
+    while (unchecked_count > 0) {
+        // Find next intersecting point
+        do {
+            if (intersect->intersect && !intersect->checked) {
+                break;
+            }
+            intersect = intersect->next;
+        } while (intersect != poly->head);
+        // Create new clipped polygon
+        current = intersect;
+        PsGHPolygon *clipped = ps_ghpolygon_new();
+        ps_ghpolygon_add(clipped, current->v4f);
+        while (true) {
+            current->checked = true;
+            unchecked_count--;
+            if (current->entry) {
+                while (true) {
+                    current = current->next;
+                    ps_ghpolygon_add(clipped, current->v4f);
+                    if (current->intersect) {
+                        break;
+                    }
+                }
+            } else {
+                while (true) {
+                    current = current->prev;
+                    ps_ghpolygon_add(clipped, current->v4f);
+                    if (current->intersect) {
+                        break;
+                    }
+                }
+            }
+            current = current->neighbor;
+            if (current->checked) {
+                break;
+            }
+        }
+        ps_array_add(array, clipped);
+    }
+    
+    if (ps_array_get_length(array) == 0) {
+        ps_array_add(array, poly);
+    }
+    return array;
 }

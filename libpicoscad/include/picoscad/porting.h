@@ -26,4 +26,6 @@
 #define PS_INLINE inline
 #endif
 
+#define OF(types...)
+
 #endif // PS_PORTING_H_

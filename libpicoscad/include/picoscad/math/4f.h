@@ -20,7 +20,6 @@ PS_INLINE Ps4f ps_4f_dot3(Ps4f lhs, Ps4f rhs) {
                      ps_4f_splat_z(mul));
 }
 
-// TODO:
 PS_INLINE Ps4f ps_4f_dot(Ps4f lhs, Ps4f rhs) {
     const Ps4f mul = ps_4f_mul(lhs, rhs);
     return ps_4f_add(ps_4f_add(ps_4f_add(ps_4f_splat_x(mul),
